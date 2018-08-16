@@ -39,7 +39,10 @@ class VProj
       else $stderr.puts "unknown option #{arg}"
       end
     }
+    @n = @sqsum = 0
   end
+
+  attr_accessor :is, :js
 
   # from geographic lat/lon to cartesian xyz
   def geog2xyz param
@@ -74,13 +77,81 @@ class VProj
     d = hypot(param[:i] - ij[:i], param[:j] - ij[:j])
     printf("%+05.1fN %+6.1fE %s %5.3f [%5.1f,%5.1f] %6.2fd [%3i,%3i]\n",
       param[:lat], param[:lon], c, ij[:scale], ij[:i], ij[:j], d, param[:i], param[:j])
+    @n = @n.succ
+    @sqsum += d * d
+  end
+
+  def meanerror
+    @sqsum / @n
   end
 
 end
 
-v = VProj.new(ARGV)
-v.test(:lat =>  0, :lon => 140, :i => 504, :j => 512)
-v.test(:lat =>  0, :lon => 150, :i => 605, :j => 512)
-v.test(:lat => 40, :lon => 140, :i => 506, :j => 154)
-v.test(:lat =>  0, :lon => 100, :i => 149, :j => 512)
-v.test(:lat => 40, :lon => 110, :i => 298, :j => 160)
+def isopt ismin, ismax, js
+  islo = ismin
+  melo = try(js, islo)
+  ishi = ismax
+  mehi = try(js, ishi)
+  memi = ismi = nil
+  18.times {|i|
+    ismi = (islo + ishi) / 2.0
+    printf "=== try #%u is=%6.2f", i, ismi
+    memi = try(js, ismi)
+    puts [[islo, melo], [ismi, memi], [ishi, mehi]].inspect if $DEBUG
+    if memi > melo and memi > mehi then
+      puts "convex error"
+      break
+    elsif mehi > melo then
+      puts "ishi := #{ismi}"
+      mehi, ishi = memi, ismi
+    elsif melo > mehi then
+      puts "islo := #{ismi}"
+      melo, islo = memi, ismi
+    else
+      break
+    end
+  }
+  [ismi, memi]
+end
+
+def jsopt ismin, ismax, jsmin, jsmax
+  jslo = jsmin
+  islo, melo = isopt(ismin, ismax, jslo)
+  jshi = jsmax
+  ishi, mehi = isopt(ismin, ismax, jshi)
+  memi = jsmi = nil
+  18.times {|i|
+    jsmi = (jslo + jshi) / 2.0
+    printf "=== try #%u js=%6.2f", i, jsmi
+    ismi, memi = isopt(ismin, ismax, jsmi)
+    puts [[jslo, melo], [jsmi, memi], [jshi, mehi]].inspect if $DEBUG
+    if memi > melo and memi > mehi then
+      puts "convex error"
+      break
+    elsif mehi > melo then
+      puts "jshi := #{jsmi}"
+      mehi, jshi = memi, jsmi
+    elsif melo > mehi then
+      puts "jslo := #{jsmi}"
+      melo, jslo = memi, jsmi
+    else
+      break
+    end
+  }
+end
+
+def try is, js
+  v = VProj.new([])
+  v.is = is
+  v.js = js
+  v.test(:lat =>  0, :lon => 140, :i => 504, :j => 512)
+  v.test(:lat =>  0, :lon => 150, :i => 605, :j => 512)
+  v.test(:lat => 40, :lon => 140, :i => 506, :j => 154)
+  v.test(:lat =>  0, :lon => 100, :i => 149, :j => 512)
+  v.test(:lat => 40, :lon => 110, :i => 298, :j => 160)
+  m = v.meanerror
+  printf("mean error (is:%6.2f js:%6.2f) = %6.2f\n", is, js, m)
+  m
+end
+
+jsopt 256, 512, 256, 512
