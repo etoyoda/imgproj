@@ -1,4 +1,21 @@
 #include <stdio.h>
+#include <errno.h>
+#include <png.h>
+#include "sat2tile.h"
+
+  struct georefimg *
+loadimg(const char *spec, struct georefimg *next)
+{
+  struct georefimg *r = NULL;
+  errno = ENOMEM;
+  return r;
+}
+
+  int
+outimg(const char *spec)
+{
+  return -1;
+}
 
 /* usage:
  * $ sat2tile -param:input.png [-param ...] z/x/y.png ...
