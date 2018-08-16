@@ -29,7 +29,7 @@ class VProj
   end
 
   def initialize argv
-    @i0, @j0, @is, @js = 510, 512, 500, 500
+    @i0, @j0, @is, @js = 511.5, 512, 500, 500
     argv.each {|arg|
       case arg
       when /^i0=/ then @i0 = Float($')
@@ -153,8 +153,14 @@ def try is, js
   v.test(:i => 421, :j => 229, :lat => 30, :lon => 130)
   v.test(:i => 508, :j => 50, :lat => 60, :lon => 140)
   v.test(:i => 507, :j => 929, :lat => -50, :lon => 140)
+  v.test(:i =>  48, :j => 512, :lat => 0, :lon => 80)
+  v.test(:i => 970, :j => 512, :lat => 0, :lon => 200)
+  v.test(:i => 774, :j => 164, :lat => 40, :lon => 180)
+  v.test(:i => 506, :j => 229, :lat => 30, :lon => 140)
+  v.test(:i => 298, :j => 863, :lat => -40, :lon => 110)
+  v.test(:i => 774, :j => 859, :lat => -40, :lon => 180)
   m = v.meanerror
-  printf("mean error (is:%6.2f js:%6.2f) = %6.2f\n", is, js, m)
+  printf("RMSE (is:%6.2f js:%6.2f) = %6.2f\n", is, js, Math::sqrt(m))
   m
 end
 
