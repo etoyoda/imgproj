@@ -149,6 +149,10 @@ def try is, js
   v.test(:lat => 40, :lon => 140, :i => 506, :j => 154)
   v.test(:lat =>  0, :lon => 100, :i => 149, :j => 512)
   v.test(:lat => 40, :lon => 110, :i => 298, :j => 160)
+  v.test(:i => 340, :j => 231, :lat => 30, :lon => 120)
+  v.test(:i => 421, :j => 229, :lat => 30, :lon => 130)
+  v.test(:i => 508, :j => 50, :lat => 60, :lon => 140)
+  v.test(:i => 507, :j => 929, :lat => -50, :lon => 140)
   m = v.meanerror
   printf("mean error (is:%6.2f js:%6.2f) = %6.2f\n", is, js, m)
   m
