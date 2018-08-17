@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <errno.h>
 #include "imgproj.h"
 
@@ -41,13 +42,39 @@ imgspec_parse(struct georefimg *img, const char *spec)
       case SYM2('s','w'):  img->img_sw = atof(token+2);  break;
       default:
         fprintf(stderr, "unknown parameter (%s)\n", token);
-	errno = EINVAL;
-	r = EOF;
-	goto end_of_scan;
+	r = errno = EINVAL;
+	goto ret;
 	break;
     }
   }
-end_of_scan:
+  switch (img->img_projtype) {
+    case PT_PERSPECTIVE:
+#define CHECK_FPAR(xx) \
+      if (isnan(img->img_ ## xx)) { \
+	fputs("parameter -" #xx " missing\n", stderr); \
+	r = errno = EINVAL; \
+	goto ret; \
+      }
+      CHECK_FPAR(lc)
+      CHECK_FPAR(sw)
+      CHECK_FPAR(sh)
+      CHECK_FPAR(cw)
+      CHECK_FPAR(ch)
+      break;
+#if 0
+    case PT_STEREOGRAPHIC:
+      break;
+#endif
+    case PT_RECTANGULAR:
+      CHECK_FPAR(ba)
+      CHECK_FPAR(bz)
+      CHECK_FPAR(la)
+      CHECK_FPAR(lz)
+      break;
+    default:
+      fputs("parameter -p missing\n", stderr);  r = errno = EINVAL;  goto ret;  break;
+  }
+ret:
   free(specbuf);
   return r;
 }
