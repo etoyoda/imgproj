@@ -1,11 +1,20 @@
 .SUFFIXES:
 .SUFFIXES: .c .o
 
-OBJS= sat2tile.o
+CFLAGS = -g --pedantic
 
-sat2tile: $(OBJS)
+OBJS= main.o img.o
+
+imgproj: $(OBJS)
+	$(CC) $(CFLAGS) $(LFLAGS) -o imgproj $(OBJS) $(LIBS)
 
 $(OBJS):
 
+main.o: imgproj.h
+img.o: imgproj.h
+
 .c.o:
-	cc -c $<
+	$(CC) $(CFLAGS) -c $<
+
+clean:
+	rm -f $(OBJS) *~ *.bak imgproj
