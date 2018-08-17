@@ -4,23 +4,52 @@
 #include <errno.h>
 #include "imgproj.h"
 
+#define SYM2(c1,c2) ((((unsigned)(c1) << 8) & 0xFF00u) | ((unsigned)(c2) & 0xFFu))
+
+int imgproj_debug = 0;
+
   int
 imgspec_parse(struct georefimg *img, const char *spec)
 {
-  char *buf = malloc(strlen(spec));
-  char *opts;
+  char *specbuf = malloc(strlen(spec));
+  char *spec2;  /* for strtok_r(3) */
   char *token;  /* for strtok_r(3) */
   char *saveptr;  /* for strtok_r(3) */
-  if (!buf) { return EOF; }
-  strcpy(buf, spec);
-  opts = buf;
-  if (opts[0] == '-') { opts++; }
-  while (NULL != (token = strtok_r(opts, ",", &saveptr))) {
-    opts = NULL;
-    printf("token <%s>\n", token);
+  int r = 0;
+  if (!specbuf) { return EOF; }
+  strcpy(specbuf, spec);
+  spec2 = specbuf;
+  if (spec2[0] == '-') { spec2++; }
+  while (NULL != (token = strtok_r(spec2, ",", &saveptr))) {
+    /* spec2, 1st arg to strtok_r() must be NULL after the first call */
+    spec2 = NULL;
+    if (imgproj_debug) { printf("token <%s>\n", token); }
+    switch (SYM2(token[0], token[1])) {
+      case SYM2('p', PT_PERSPECTIVE):
+      case SYM2('p', PT_STEREOGRAPHIC):
+      case SYM2('p', PT_RECTANGULAR):
+        img->img_projtype = token[1];
+	break;
+      case SYM2('b','a'):  img->img_ba = atof(token+2);  break;
+      case SYM2('b','z'):  img->img_bz = atof(token+2);  break;
+      case SYM2('l','a'):  img->img_la = atof(token+2);  break;
+      case SYM2('l','z'):  img->img_lz = atof(token+2);  break;
+      case SYM2('l','c'):  img->img_lc = atof(token+2);  break;
+      case SYM2('c','h'):  img->img_ch = atof(token+2);  break;
+      case SYM2('c','w'):  img->img_cw = atof(token+2);  break;
+      case SYM2('s','h'):  img->img_sh = atof(token+2);  break;
+      case SYM2('s','w'):  img->img_sw = atof(token+2);  break;
+      default:
+        fprintf(stderr, "unknown parameter (%s)\n", token);
+	errno = EINVAL;
+	r = EOF;
+	goto end_of_scan;
+	break;
+    }
   }
-  free(buf);
-  return 0;
+end_of_scan:
+  free(specbuf);
+  return r;
 }
 
   struct georefimg *
@@ -68,7 +97,9 @@ main(int argc, const char **argv)
   int waiting_fnam = 0;
   int i;  /* index */
   for (i = 1; i < argc; i++) {
-    if (argv[i][0] == '-') {
+    if (0 == strcmp(argv[i], "-d")) {
+      imgproj_debug = 1;
+    } else if (argv[i][0] == '-') {
       imgchain = params_parse(argv[i], imgchain);
       if (!imgchain) { r = EOF; break; }
       waiting_fnam = 1;

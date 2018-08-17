@@ -27,6 +27,8 @@ struct georefimg {
   double		img_lz;
   /* longitude of center of projection */
   double		img_lc;
+  double		img_cw;
+  double		img_ch;
   double		img_sw;
   double		img_sh;
   /* --- pointer to chain to the next image --- */

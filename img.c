@@ -10,7 +10,10 @@ new_georefimg(void)
 {
   struct georefimg *r = malloc(sizeof *r);
   if (r == NULL) { return r; };
-  memset(r, '\0', sizeof *r);
+  /* double-typed fields are initialized by NaN. The rest is rescued later.  */
+  memset(r, 0xFF, sizeof *r);
+  r->img_width = r->img_height = 0;
+  r->img_vector = NULL;
   r->img_next = NULL;
   return r;
 }

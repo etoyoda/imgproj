@@ -18,3 +18,6 @@ img.o: imgproj.h
 
 clean:
 	rm -f $(OBJS) *~ *.bak imgproj
+
+tags:
+	ctags *.c *.h
