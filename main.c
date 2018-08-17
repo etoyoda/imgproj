@@ -1,13 +1,39 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 #include "imgproj.h"
+
+  const char *
+imgspec_parse(struct georefimg *img, const char *spec)
+{
+  char *buf = malloc(strlen(spec));
+  char *opts;
+  char *token;  /* for strtok_r(3) */
+  char *saveptr;  /* for strtok_r(3) */
+  const char *fnam = NULL;
+  if (!buf) { return NULL; }
+  strcpy(buf, spec);
+  opts = buf + 1;
+  while (NULL != (token = strtok_r(opts, ",", &saveptr))) {
+    opts = NULL;
+    printf("token <%s>\n", token);
+    fnam = spec + (token - buf);
+  }
+  return fnam;
+}
 
   struct georefimg *
 loadimg(const char *spec, struct georefimg *next)
 {
-  struct georefimg *r = new_georefimg();
+  struct georefimg *img = new_georefimg();
+  const char *fnam;
+  if (!img) { return NULL; }
+  fnam = imgspec_parse(img, spec);
+  printf("fnam <%s>\n", fnam);
+
   errno = ENOMEM;
-  return r;
+  return img;
 }
 
   int
@@ -35,15 +61,16 @@ main(int argc, const char **argv)
   struct georefimg *imgchain = NULL;
   unsigned r = 1;
   int i;
-  for (i = 0; i < argc; i++) {
+  for (i = 1; i < argc; i++) {
     if (argv[i][0] == '-') {
       imgchain = loadimg(argv[i], imgchain);
-      if (imgchain == NULL) {
+      if (!imgchain) {
         perror(argv[i]);
 	r = 15;
 	break;
       }
     } else {
+      if (!imgchain) { break; }
       r = outimg(imgchain, argv[i]);
     }
   }

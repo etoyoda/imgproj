@@ -9,4 +9,8 @@
 new_georefimg(void)
 {
   struct georefimg *r = malloc(sizeof *r);
+  if (r == NULL) { return r; };
+  memset(r, '\0', sizeof *r);
+  r->img_next = NULL;
+  return r;
 }

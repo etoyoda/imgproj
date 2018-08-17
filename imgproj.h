@@ -1,13 +1,23 @@
 /* sat2tile.h */
 
+enum projtype {
+  /* satellite full disc */
+  PT_PERSPECTIVE = 'p', 
+  /* centered at 90N pole */
+  PT_STEREOGRAPHIC = 's',
+  /* meteorologists call it latitude-longitude projection */ 
+  PT_RECTANGULAR = 'r'
+};
+
 struct georefimg {
-  /* members to hold image */
+  /* --- members to hold image --- */
   int   img_width;
   int   img_height;
-  /* actual type (png_bytep *) */
+  /* actual type <png_bytep *>, here <void *> is used to conseal png.h dependency. */
   void **img_vector;
-  /* members to describe map projection */
-  /* pointer to chain to the next image */
+  /* --- members to describe map projection --- */
+  enum projtype	img_projtype;
+  /* --- pointer to chain to the next image --- */
   struct georefimg *img_next;
 };
 
