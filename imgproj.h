@@ -11,14 +11,26 @@ enum projtype {
 
 struct georefimg {
   /* --- members to hold image --- */
-  int   img_width;
-  int   img_height;
+  int   		img_width;
+  int   		img_height;
   /* actual type <png_bytep *>, here <void *> is used to conseal png.h dependency. */
-  void **img_vector;
+  void			**img_vector;
   /* --- members to describe map projection --- */
-  enum projtype	img_projtype;
+  enum projtype		img_projtype;
+  /* latitude of the first grid point */
+  double		img_ba;
+  /* latitude of the last grid point */
+  double		img_bz;
+  /* longitude of the first grid point */
+  double		img_la;
+  /* longitude of the last grid point */
+  double		img_lz;
+  /* longitude of center of projection */
+  double		img_lc;
+  double		img_sw;
+  double		img_sh;
   /* --- pointer to chain to the next image --- */
-  struct georefimg *img_next;
+  struct georefimg	*img_next;
 };
 
 extern struct georefimg *new_georefimg(void);
