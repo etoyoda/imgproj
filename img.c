@@ -127,6 +127,7 @@ findpixel(const struct georefimg *img, double lat, double lon)
   if (j > (img->img_height - 1)) { goto next; }
   ui = floor(i + 0.5);
   uj = floor(j + 0.5);
+  if (imgproj_debug) { printf(" [%3u,%3u]", ui, uj); }
   return (png_byte *)(img->img_vector[uj]) + ui * 4;
 
 next:
@@ -137,6 +138,33 @@ next:
   }
 }
 
+  int
+writeimg(const struct outparams *op, const struct georefimg *img,
+  png_bytep *ovector)
+{
+  FILE *fp = fopen(op->filename, "wb");
+  if (!fp) { return EOF; }
+  png_structp png = png_create_write_struct(
+    PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+  if (!fp) { errno = EPNGFATAL; return EOF; }
+  png_infop info = png_create_info_struct(png);
+  if (!info) { errno = EPNGFATAL; return EOF; }
+
+  if (setjmp(png_jmpbuf(png))) { errno = EPNGFATAL; return EOF; }
+
+  png_init_io(png, fp);
+
+  unsigned owidth = op->xz - op->xa + 1; 
+  unsigned oheight = op->yz - op->ya + 1;
+  png_set_IHDR(png, info, owidth, oheight, 8, PNG_COLOR_TYPE_RGBA,
+    PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+  png_write_info(png, info);
+  png_write_image(png, ovector);
+  png_write_end(png, NULL);
+  fclose(fp);
+  
+  return 0;
+}
 
   int
 makeimg(const struct outparams *op, const struct georefimg *img)
@@ -147,6 +175,7 @@ makeimg(const struct outparams *op, const struct georefimg *img)
   png_bytep *ovector;
   png_byte *ipix;
   png_byte *opix;
+  int r;
 
   printf("z%u x%u..%u y%u..%u f=%s\n",
     op->z, op->xa, op->xz, op->ya, op->yz, op->filename);
@@ -171,17 +200,20 @@ makeimg(const struct outparams *op, const struct georefimg *img)
       /* longitude in radian */
       double lon = 2 * M_PI * (ldexp((int)i + 0.5, -8 - (int)op->z) - 0.5);
       if (imgproj_debug) {
-        printf("# %03u %03u %9.3f %8.3f\n", j, i, DEG(lat), DEG(lon));
+        printf("# [%03u,%03u] %+08.3f%+07.3f/", i, j, DEG(lon), DEG(lat));
       }
       opix = (png_byte *)(ovector[j]) + i * 4;
       ipix = findpixel(img, lat, lon);
       if (ipix) {
         memcpy(opix, ipix, 4);
       }
+      if (imgproj_debug) { putchar('\n'); }
     }
   }
 
-  return 0; 
+  r = writeimg(op, img, ovector);
+
+  return r; 
 quit:
   errno = EINVAL;
   return 0;
