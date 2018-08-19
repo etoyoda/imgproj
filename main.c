@@ -21,7 +21,7 @@ imgspec_parse(struct georefimg *img, const char *spec)
   int r = 0;
   if (!specbuf) { return EOF; }
   strcpy(specbuf, spec);
-  spec2 = specbuf;
+  saveptr = spec2 = specbuf;
   if (spec2[0] == '-') { spec2++; }
   while (NULL != (token = strtok_r(spec2, ",", &saveptr))) {
     /* spec2, 1st arg to strtok_r() must be NULL after the first call */
@@ -113,7 +113,7 @@ outspec_regcomp(void)
   if (r) { goto err; }
   /* --- pattern 1: general filename w/pattern --- */
   r = regcomp(&regs.colon,
-    ":z([0-9]+)x([0-9]+)-([0-9]+)y([0-9]+)-([0-9]+):(.*\\.png)$",
+    ":z([0-9]+)[:,]?x([0-9]+)-([0-9]+)[:,]?y([0-9]+)-([0-9]+):(.*\\.png)$",
     REG_EXTENDED | REG_NEWLINE);
   if (r) { goto err; }
   return &regs;
@@ -168,9 +168,9 @@ try_colon:
   errno = 0;
   op.z = strtoul(fnam + md[1].rm_so, NULL, 10);
   op.xa = 256u * strtoul(fnam + md[2].rm_so, NULL, 10);
-  op.xz = 256u * strtoul(fnam + md[3].rm_so, NULL, 10);
+  op.xz = 256u * strtoul(fnam + md[3].rm_so, NULL, 10) + 255u;
   op.ya = 256u * strtoul(fnam + md[4].rm_so, NULL, 10);
-  op.yz = 256u * strtoul(fnam + md[5].rm_so, NULL, 10);
+  op.yz = 256u * strtoul(fnam + md[5].rm_so, NULL, 10) + 255u;
   op.filename = fnam + md[6].rm_so;
   r = makeimg(&op, img);
   return r;

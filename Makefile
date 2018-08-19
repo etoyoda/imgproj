@@ -1,7 +1,7 @@
 .SUFFIXES:
 .SUFFIXES: .c .o
 
-CFLAGS = -g --pedantic
+CFLAGS = -g --std=gnu99 --pedantic
 
 OBJS= main.o img.o
 LIBS= -lm -lpng

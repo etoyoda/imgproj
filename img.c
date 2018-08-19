@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <math.h>
 #include <png.h>
 #include "imgproj.h"
 
@@ -98,8 +99,42 @@ loadimg(struct georefimg *img, const char *fnam)
   return 0;
 }
 
+#define DEG(x) (180.0 * (x) * M_1_PI)
+
   int
 makeimg(const struct outparams *op, const struct georefimg *img)
 {
-  return -1; 
+  unsigned owidth = op->xz - op->xa + 1; 
+  unsigned oheight = op->yz - op->ya + 1;
+  png_byte *obuf;
+  png_bytep *ovector;
+
+  printf("z%u x%u..%u y%u..%u f=%s\n",
+    op->z, op->xa, op->xz, op->ya, op->yz, op->filename);
+  if (op->xz < op->xa) { fputs("reverse x scan", stderr); goto quit; }
+  if (op->yz < op->ya) { fputs("reverse y scan", stderr); goto quit; }
+
+  obuf = malloc(sizeof(png_byte [4]) * owidth * oheight);
+  if (obuf == NULL) { return EOF; }
+  memset(obuf, 0, 4 * owidth * oheight);
+  ovector = malloc(sizeof(png_bytep) * oheight);
+  if (ovector == NULL) { free(obuf); return EOF; }
+  for (unsigned j = op->ya; j <= op->yz; j++) {
+    ovector[j] = obuf + owidth * 4;
+  }
+
+  for (unsigned j = op->ya; j <= op->yz; j++) {
+    double lat = asin(tanh(
+      (1.0 - ldexp((int)j + 0.5, -7 - (int)op->z)) * M_PI
+    ));
+    for (unsigned i = op->xa; i <= op->xz; i++) {
+      double lon = 2 * M_PI * (ldexp((int)i + 0.5, -8 - (int)op->z) - 0.5);
+      printf("%03u %03u %9.3f %8.3f\n", j, i, DEG(lat), DEG(lon));
+    }
+  }
+
+  return 0; 
+quit:
+  errno = EINVAL;
+  return 0;
 }
