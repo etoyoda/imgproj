@@ -3,6 +3,8 @@
 #include <string.h>
 #include <math.h>
 #include <errno.h>
+#include <sys/types.h> /* for regex */
+#include <regex.h>
 #include "imgproj.h"
 
 #define SYM2(c1,c2) ((((unsigned)(c1) << 8) & 0xFF00u) | ((unsigned)(c2) & 0xFFu))
@@ -97,10 +99,99 @@ loadimg(struct georefimg *img, const char *fnam)
   return -1;
 }
 
-  int
-outimg(const struct georefimg *img, const char *fnam)
+struct re_outspec {
+  /* standard z/x/y.png style filename */
+  regex_t       zxy;
+  /* filename with colon-separated parameters */
+  regex_t       colon;
+};
+
+  struct re_outspec *
+outimg_init(void)
 {
-  return -1;
+  static struct re_outspec regs;
+  char msg[128];
+  int r;
+  /* --- pattern 0: z/y/x tile --- */
+  r = regcomp(&regs.zxy,
+    "([0-9]+)/([0-9]+)/([0-9]+)\\.png$",
+    REG_EXTENDED);
+  if (r) { goto err; }
+  /* --- pattern 1: general filename w/pattern --- */
+  r = regcomp(&regs.colon,
+    ":z([0-9]+)x([0-9]+)-([0-9]+)y([0-9]+)-([0-9]+):(.*\\.png)$",
+    REG_EXTENDED | REG_NEWLINE);
+  if (r) { goto err; }
+  return &regs;
+err:
+  regerror(r, NULL, msg, sizeof msg);
+  fputs(msg, stderr);
+  errno = EINVAL;
+  return NULL;
+}
+
+struct outparams {
+   unsigned z;  /* zoom level */
+   unsigned xa;  /* global x index of first pixel (= 256 xfirst) */
+   unsigned xz;  /* global x index of last pixel (= 256 xlast + 255) */
+   unsigned ya;  /* global y index of first pixel (= 256 yfirst) */
+   unsigned yz;  /* global y index of last pixel (= 256 ylast + 255) */
+   const char *filename;
+};
+
+  void
+regexmsg(int e, regex_t *re)
+{
+  char buf[256];
+  regerror(e, re, buf, sizeof buf);
+  fputs(buf, stderr);
+}
+
+  int
+outimg(struct re_outspec *regs, const struct georefimg *img, const char *fnam)
+{
+  const int NMATCH = 10;
+  struct outparams op;
+  regmatch_t md[NMATCH];
+  char msgbuf[256];
+  unsigned long u;
+  int r;
+
+  /* --- pattern 1: z/x/y tile --- */
+  r = regexec(&regs->zxy, fnam, NMATCH, md, 0);
+  if (r == REG_NOMATCH) { goto try_colon; }
+  if (r) { regexmsg(r, &regs->zxy); goto regerr; }
+  errno = 0;
+  op.z = strtoul(fnam + md[1].rm_so, NULL, 10);
+  u = strtoul(fnam + md[2].rm_so, NULL, 10);
+  op.xa = 256u * u;
+  op.xz = 256u * u + 255u;
+  u = strtoul(fnam + md[3].rm_so, NULL, 10);
+  op.ya = 256u * u;
+  op.yz = 256u * u + 255u;
+  op.filename = fnam;
+  r = outimg2(&op, img);
+  return r;
+
+try_colon:
+  /* --- pattern 2: explicit parameter --- */
+  r = regexec(&regs->colon, fnam, NMATCH, md, 0);
+  if (r == REG_NOMATCH) { goto nomatch; }
+  if (r) { regexmsg(r, &regs->colon); goto regerr; }
+  errno = 0;
+  op.z = strtoul(fnam + md[1].rm_so, NULL, 10);
+  op.xa = 256u * strtoul(fnam + md[2].rm_so, NULL, 10);
+  op.xz = 256u * strtoul(fnam + md[3].rm_so, NULL, 10);
+  op.ya = 256u * strtoul(fnam + md[4].rm_so, NULL, 10);
+  op.yz = 256u * strtoul(fnam + md[5].rm_so, NULL, 10);
+  op.filename = fnam + md[6].rm_so;
+  r = outimg2(&op, img);
+  return r;
+
+regerr:
+nomatch:
+  errno = EINVAL;
+  return 1;
 }
 
 /* usage:
@@ -123,23 +214,26 @@ main(int argc, const char **argv)
   int r = 1;
   int waiting_fnam = 0;
   int i;  /* index */
+  struct re_outspec *regs;
+  regs = outimg_init();
   for (i = 1; i < argc; i++) {
     if (0 == strcmp(argv[i], "-d")) {
       imgproj_debug = 1;
     } else if (argv[i][0] == '-') {
       imgchain = params_parse(argv[i], imgchain);
-      if (!imgchain) { r = EOF; break; }
+      if (!imgchain) { r = EOF; goto ret; }
       waiting_fnam = 1;
     } else if (waiting_fnam) {
       r = loadimg(imgchain, argv[i]);
-      if (r != 0) { break; }
+      if (r != 0) { goto ret; }
       waiting_fnam = 0;
     } else {
-      if (!imgchain) { break; }
-      r = outimg(imgchain, argv[i]);
-      if (r != 0) { break; }
+      if (!imgchain) { goto ret; }
+      r = outimg(regs, imgchain, argv[i]);
+      if (r != 0) { goto ret; }
     }
   }
+ret:
   if (r) {
     perror(argv[0]);
     fputs("usage: imgproj -params input.png [-params input.png ...] z/x/y.png ...\n",
