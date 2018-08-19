@@ -93,12 +93,6 @@ params_parse(const char *spec, struct georefimg *next)
   return img;
 }
 
-  int
-loadimg(struct georefimg *img, const char *fnam)
-{
-  return -1;
-}
-
 struct re_outspec {
   /* standard z/x/y.png style filename */
   regex_t       zxy;
@@ -107,7 +101,7 @@ struct re_outspec {
 };
 
   struct re_outspec *
-outimg_init(void)
+outspec_regcomp(void)
 {
   static struct re_outspec regs;
   char msg[128];
@@ -130,15 +124,6 @@ err:
   return NULL;
 }
 
-struct outparams {
-   unsigned z;  /* zoom level */
-   unsigned xa;  /* global x index of first pixel (= 256 xfirst) */
-   unsigned xz;  /* global x index of last pixel (= 256 xlast + 255) */
-   unsigned ya;  /* global y index of first pixel (= 256 yfirst) */
-   unsigned yz;  /* global y index of last pixel (= 256 ylast + 255) */
-   const char *filename;
-};
-
   void
 regexmsg(int e, regex_t *re)
 {
@@ -148,7 +133,9 @@ regexmsg(int e, regex_t *re)
 }
 
   int
-outimg(struct re_outspec *regs, const struct georefimg *img, const char *fnam)
+outspec_parse(struct re_outspec *regs,
+  const struct georefimg *img,
+  const char *fnam)
 {
   const int NMATCH = 10;
   struct outparams op;
@@ -170,7 +157,7 @@ outimg(struct re_outspec *regs, const struct georefimg *img, const char *fnam)
   op.ya = 256u * u;
   op.yz = 256u * u + 255u;
   op.filename = fnam;
-  r = outimg2(&op, img);
+  r = makeimg(&op, img);
   return r;
 
 try_colon:
@@ -185,7 +172,7 @@ try_colon:
   op.ya = 256u * strtoul(fnam + md[4].rm_so, NULL, 10);
   op.yz = 256u * strtoul(fnam + md[5].rm_so, NULL, 10);
   op.filename = fnam + md[6].rm_so;
-  r = outimg2(&op, img);
+  r = makeimg(&op, img);
   return r;
 
 regerr:
@@ -197,6 +184,7 @@ nomatch:
 /* usage:
  * $ imgproj -p[options],input.png [-param ...] z/x/y.png ...
  *
+ --- obsolete info
  * -pp,lc140.7,cw511,ch512,sh494.9,sw491.9
  *   the input.png is full disc image from a geostationary satellite
  *   located at 140.7 degree east, with the center of field of view at
@@ -215,7 +203,7 @@ main(int argc, const char **argv)
   int waiting_fnam = 0;
   int i;  /* index */
   struct re_outspec *regs;
-  regs = outimg_init();
+  regs = outspec_regcomp();
   for (i = 1; i < argc; i++) {
     if (0 == strcmp(argv[i], "-d")) {
       imgproj_debug = 1;
@@ -229,7 +217,7 @@ main(int argc, const char **argv)
       waiting_fnam = 0;
     } else {
       if (!imgchain) { goto ret; }
-      r = outimg(regs, imgchain, argv[i]);
+      r = outspec_parse(regs, imgchain, argv[i]);
       if (r != 0) { goto ret; }
     }
   }

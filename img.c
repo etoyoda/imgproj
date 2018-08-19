@@ -17,3 +17,15 @@ new_georefimg(void)
   r->img_next = NULL;
   return r;
 }
+
+  int
+loadimg(struct georefimg *img, const char *fnam)
+{
+  return -1;
+}
+
+  int
+makeimg(const struct outparams *op, const struct georefimg *img)
+{
+  
+}

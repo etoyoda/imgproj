@@ -35,4 +35,15 @@ struct georefimg {
   struct georefimg	*img_next;
 };
 
+struct outparams {
+   unsigned z;  /* zoom level */
+   unsigned xa;  /* global x index of first pixel (= 256 xfirst) */
+   unsigned xz;  /* global x index of last pixel (= 256 xlast + 255) */
+   unsigned ya;  /* global y index of first pixel (= 256 yfirst) */
+   unsigned yz;  /* global y index of last pixel (= 256 ylast + 255) */
+   const char *filename;
+};
+
 extern struct georefimg *new_georefimg(void);
+extern int loadimg(struct georefimg *img, const char *fnam);
+extern int makeimg(const struct outparams *op, const struct georefimg *img);
