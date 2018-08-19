@@ -6,6 +6,13 @@
 #include <png.h>
 #include "imgproj.h"
 
+#define EARTH_E2        0.006694380022903415749574948586
+#define EARTH_B_A       0.996647189318816362
+#define EARTH_A         6371137.0
+#define GEO_R           42164000.0
+#define DEG(x)          (180.0 * (x) * M_1_PI)
+#define RADIAN(x)       (M_PI * (x) / 180.0)
+
   struct georefimg *
 new_georefimg(void)
 {
@@ -99,7 +106,37 @@ loadimg(struct georefimg *img, const char *fnam)
   return 0;
 }
 
-#define DEG(x) (180.0 * (x) * M_1_PI)
+  png_byte *
+findpixel(const struct georefimg *img, double lat, double lon)
+{
+  double sinlat = sin(lat);
+  /* normal from ellipsoid to axis of the Earth */
+  double nn = 1.0 / sqrt(1.0 - EARTH_E2 * sinlat * sinlat);
+  double coslat = cos(lat);
+  double lam = lon - RADIAN(img->img_lc);
+  double x = nn * coslat * cos(lam);
+  double y = nn * coslat * sin(lam);
+  double z = EARTH_B_A * EARTH_B_A * nn * sinlat;
+  double scale = GEO_R / (GEO_R - x * EARTH_A); 
+  double i = img->img_cw + y * img->img_sw * scale;
+  double j = img->img_ch - z * img->img_sh * scale;
+  unsigned ui, uj;
+  if (i < 0.0) { goto next; }
+  if (i > (img->img_width - 1)) { goto next; }
+  if (j < 0.0) { goto next; }
+  if (j > (img->img_height - 1)) { goto next; }
+  ui = floor(i + 0.5);
+  uj = floor(j + 0.5);
+  return (png_byte *)(img->img_vector[uj]) + ui * 4;
+
+next:
+  if (img->img_next) {
+    return findpixel(img, lat, lon);
+  } else {
+    return NULL;
+  }
+}
+
 
   int
 makeimg(const struct outparams *op, const struct georefimg *img)
@@ -108,6 +145,8 @@ makeimg(const struct outparams *op, const struct georefimg *img)
   unsigned oheight = op->yz - op->ya + 1;
   png_byte *obuf;
   png_bytep *ovector;
+  png_byte *ipix;
+  png_byte *opix;
 
   printf("z%u x%u..%u y%u..%u f=%s\n",
     op->z, op->xa, op->xz, op->ya, op->yz, op->filename);
@@ -124,12 +163,21 @@ makeimg(const struct outparams *op, const struct georefimg *img)
   }
 
   for (unsigned j = op->ya; j <= op->yz; j++) {
+    /* latitude in radian */
     double lat = asin(tanh(
       (1.0 - ldexp((int)j + 0.5, -7 - (int)op->z)) * M_PI
     ));
     for (unsigned i = op->xa; i <= op->xz; i++) {
+      /* longitude in radian */
       double lon = 2 * M_PI * (ldexp((int)i + 0.5, -8 - (int)op->z) - 0.5);
-      printf("%03u %03u %9.3f %8.3f\n", j, i, DEG(lat), DEG(lon));
+      if (imgproj_debug) {
+        printf("# %03u %03u %9.3f %8.3f\n", j, i, DEG(lat), DEG(lon));
+      }
+      opix = (png_byte *)(ovector[j]) + i * 4;
+      ipix = findpixel(img, lat, lon);
+      if (ipix) {
+        memcpy(opix, ipix, 4);
+      }
     }
   }
 

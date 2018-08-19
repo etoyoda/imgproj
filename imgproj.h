@@ -44,6 +44,7 @@ struct outparams {
    const char *filename;
 };
 
+extern int imgproj_debug;
 extern struct georefimg *new_georefimg(void);
 extern int loadimg(struct georefimg *img, const char *fnam);
 extern int makeimg(const struct outparams *op, const struct georefimg *img);
