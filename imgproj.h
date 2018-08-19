@@ -47,3 +47,5 @@ struct outparams {
 extern struct georefimg *new_georefimg(void);
 extern int loadimg(struct georefimg *img, const char *fnam);
 extern int makeimg(const struct outparams *op, const struct georefimg *img);
+
+#define EPNGFATAL ENETDOWN

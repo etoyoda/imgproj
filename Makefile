@@ -4,6 +4,7 @@
 CFLAGS = -g --pedantic
 
 OBJS= main.o img.o
+LIBS= -lm -lpng
 
 imgproj: $(OBJS)
 	$(CC) $(CFLAGS) $(LFLAGS) -o imgproj $(OBJS) $(LIBS)
@@ -19,5 +20,5 @@ img.o: imgproj.h
 clean:
 	rm -f $(OBJS) *~ *.bak imgproj
 
-tags:
+tags: main.c img.c imgproj.h
 	ctags *.c *.h
