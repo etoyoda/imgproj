@@ -98,6 +98,7 @@ struct re_outspec {
   regex_t       zxy;
   /* filename with colon-separated parameters */
   regex_t       colon;
+  regex_t       colon2;
 };
 
   struct re_outspec *
@@ -114,6 +115,11 @@ outspec_regcomp(void)
   /* --- pattern 1: general filename w/pattern --- */
   r = regcomp(&regs.colon,
     ":z([0-9]+)[:,]?x([0-9]+)-([0-9]+)[:,]?y([0-9]+)-([0-9]+):(.*\\.png)$",
+    REG_EXTENDED | REG_NEWLINE);
+  if (r) { goto err; }
+  /* --- pattern 2: general filename w/pattern --- */
+  r = regcomp(&regs.colon2,
+    ":z([0-9]+)[:,]?x([0-9]+)[:,]?y([0-9]+):(.*\\.png)$",
     REG_EXTENDED | REG_NEWLINE);
   if (r) { goto err; }
   return &regs;
@@ -144,7 +150,7 @@ outspec_parse(struct re_outspec *regs,
   unsigned long u;
   int r;
 
-  /* --- pattern 1: z/x/y tile --- */
+  /* --- pattern 0: z/x/y tile --- */
   r = regexec(&regs->zxy, fnam, NMATCH, md, 0);
   if (r == REG_NOMATCH) { goto try_colon; }
   if (r) { regexmsg(r, &regs->zxy); goto regerr; }
@@ -161,9 +167,9 @@ outspec_parse(struct re_outspec *regs,
   return r;
 
 try_colon:
-  /* --- pattern 2: explicit parameter --- */
+  /* --- pattern 1: explicit parameter --- */
   r = regexec(&regs->colon, fnam, NMATCH, md, 0);
-  if (r == REG_NOMATCH) { goto nomatch; }
+  if (r == REG_NOMATCH) { goto try_colon2; }
   if (r) { regexmsg(r, &regs->colon); goto regerr; }
   errno = 0;
   op.z = strtoul(fnam + md[1].rm_so, NULL, 10);
@@ -172,6 +178,21 @@ try_colon:
   op.ya = 256u * strtoul(fnam + md[4].rm_so, NULL, 10);
   op.yz = 256u * strtoul(fnam + md[5].rm_so, NULL, 10) + 255u;
   op.filename = fnam + md[6].rm_so;
+  r = makeimg(&op, img);
+  return r;
+
+try_colon2:
+  /* --- pattern 2: explicit parameter --- */
+  r = regexec(&regs->colon2, fnam, NMATCH, md, 0);
+  if (r == REG_NOMATCH) { goto nomatch; }
+  if (r) { regexmsg(r, &regs->colon); goto regerr; }
+  errno = 0;
+  op.z = strtoul(fnam + md[1].rm_so, NULL, 10);
+  op.xa = 256u * strtoul(fnam + md[2].rm_so, NULL, 10);
+  op.xz = op.xa + 255u;
+  op.ya = 256u * strtoul(fnam + md[3].rm_so, NULL, 10);
+  op.yz = op.ya + 255u;
+  op.filename = fnam + md[4].rm_so;
   r = makeimg(&op, img);
   return r;
 
