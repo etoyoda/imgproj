@@ -27,6 +27,7 @@ loadimg(struct georefimg *img, const char *fnam)
   png_infop info;
   png_byte ucoltype;
   png_byte udepth;
+  png_bytep *vector;
 
   fp = fopen(fnam, "rb");
   /* errno := ENOENT, EPERM etc. */
@@ -50,7 +51,51 @@ loadimg(struct georefimg *img, const char *fnam)
   printf("%s: width=%zu height=%zu type=%u depth=%u\n",
     fnam, (size_t)img->img_width, (size_t)img->img_height, ucoltype, udepth);
 
-  return EOF;
+  /* configuration to read (and convert to) RGBA image */
+  if (udepth == 16) {
+    png_set_strip_16(png);
+  }
+  if (ucoltype == PNG_COLOR_TYPE_PALETTE) {
+    png_set_palette_to_rgb(png);
+  }
+  if ((ucoltype == PNG_COLOR_TYPE_GRAY) && (udepth < 8)) {
+    png_set_expand_gray_1_2_4_to_8(png);
+  }
+  if (png_get_valid(png, info, PNG_INFO_tRNS)) {
+    png_set_tRNS_to_alpha(png);
+  }
+  switch (ucoltype) {
+    case PNG_COLOR_TYPE_RGB:
+    case PNG_COLOR_TYPE_GRAY:
+    case PNG_COLOR_TYPE_PALETTE:
+      png_set_filler(png, 0xFF, PNG_FILLER_AFTER);
+      break;
+    default:  break;
+  }
+  switch (ucoltype) {
+    case PNG_COLOR_TYPE_GRAY:
+    case PNG_COLOR_TYPE_GRAY_ALPHA:
+      png_set_gray_to_rgb(png);
+      break;
+    default:  break;
+  }
+  png_read_update_info(png, info);
+
+  if (png_get_rowbytes(png, info) > 4 * img->img_width) {
+    errno = EPNGFATAL;  return EOF;
+  }
+
+  img->img_vector = malloc(img->img_height * sizeof(png_bytep));
+  vector = (png_bytep *)img->img_vector;
+  if (vector == NULL) { return EOF; }
+  for (int j = 0; j < img->img_height; j++) {
+    vector[j] = (png_byte *)malloc(img->img_width * 4);
+    if (vector[j] == NULL) { return EOF; }
+  }
+  png_read_image(png, vector);
+  fclose(fp);
+
+  return 0;
 }
 
   int
