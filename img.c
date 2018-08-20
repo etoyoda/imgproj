@@ -56,7 +56,7 @@ loadimg(struct georefimg *img, const char *fnam)
   img->img_height = png_get_image_height(png, info);
   ucoltype = png_get_color_type(png, info);
   udepth = png_get_bit_depth(png, info);
-  printf("%s: width=%zu height=%zu type=%u depth=%u\n",
+  fprintf(stderr, "%s: width=%zu height=%zu type=%u depth=%u\n",
     fnam, (size_t)img->img_width, (size_t)img->img_height, ucoltype, udepth);
 
   /* configuration to read (and convert to) RGBA image */
@@ -114,6 +114,9 @@ findpixel(const struct georefimg *img, double lat, double lon)
   double nn = 1.0 / sqrt(1.0 - EARTH_E2 * sinlat * sinlat);
   double coslat = cos(lat);
   double lam = lon - RADIAN(img->img_lc);
+  if (lam < -M_PI) { lam += 2 * M_PI; }
+  if (lam > RADIAN(80.0)) { goto next; }
+  if (lam < RADIAN(-80.0)) { goto next; }
   double x = nn * coslat * cos(lam);
   double y = nn * coslat * sin(lam);
   double z = EARTH_B_A * EARTH_B_A * nn * sinlat;
@@ -127,7 +130,11 @@ findpixel(const struct georefimg *img, double lat, double lon)
   if (j > (img->img_height - 1)) { goto next; }
   ui = floor(i + 0.5);
   uj = floor(j + 0.5);
-  if (imgproj_debug) { printf(" [%3u,%3u]", ui, uj); }
+  if (imgproj_debug) {
+    png_byte *pix = (png_byte *)(img->img_vector[uj]) + ui * 4;
+    fprintf(stderr, " <%3u,%3u> #%02x%02x%02x%02x",
+      ui, uj, pix[0], pix[1], pix[2], pix[3]);
+  }
   return (png_byte *)(img->img_vector[uj]) + ui * 4;
 
 next:
@@ -171,24 +178,24 @@ makeimg(const struct outparams *op, const struct georefimg *img)
 {
   unsigned owidth = op->xz - op->xa + 1; 
   unsigned oheight = op->yz - op->ya + 1;
-  png_byte *obuf;
   png_bytep *ovector;
   png_byte *ipix;
   png_byte *opix;
   int r;
 
-  printf("z%u x%u..%u y%u..%u f=%s\n",
-    op->z, op->xa, op->xz, op->ya, op->yz, op->filename);
+  if (imgproj_debug) {
+    fprintf(stderr, "try z%u x%u..%u (w%u) y%u..%u (h%u) f=%s\n",
+      op->z, op->xa, op->xz, owidth, op->ya, op->yz, oheight, op->filename);
+  }
   if (op->xz < op->xa) { fputs("reverse x scan", stderr); goto quit; }
   if (op->yz < op->ya) { fputs("reverse y scan", stderr); goto quit; }
 
-  obuf = malloc(sizeof(png_byte [4]) * owidth * oheight);
-  if (obuf == NULL) { return EOF; }
-  memset(obuf, 0, 4 * owidth * oheight);
   ovector = malloc(sizeof(png_bytep) * oheight);
-  if (ovector == NULL) { free(obuf); return EOF; }
-  for (unsigned j = op->ya; j <= op->yz; j++) {
-    ovector[j] = obuf + owidth * 4;
+  if (ovector == NULL) { return EOF; }
+  for (unsigned oj = 0; oj <= oheight; oj++) {
+    ovector[oj] = malloc(owidth * 4);
+    if (!ovector[oj]) { return EOF; }
+    memset(ovector[oj], 0, 4 * owidth);
   }
 
   for (unsigned j = op->ya; j <= op->yz; j++) {
@@ -199,19 +206,28 @@ makeimg(const struct outparams *op, const struct georefimg *img)
     for (unsigned i = op->xa; i <= op->xz; i++) {
       /* longitude in radian */
       double lon = 2 * M_PI * (ldexp((int)i + 0.5, -8 - (int)op->z) - 0.5);
+      unsigned oi = i - op->xa;
+      unsigned oj = j - op->ya;
       if (imgproj_debug) {
-        printf("# [%03u,%03u] %+08.3f%+07.3f/", i, j, DEG(lon), DEG(lat));
+        fprintf(stderr, "# %3u,%3u [%3u,%3u] %+08.3f%+07.3f/",
+	  oi, oj, i, j, DEG(lon), DEG(lat));
       }
-      opix = (png_byte *)(ovector[j]) + i * 4;
+      opix = (png_byte *)(ovector[oj]) + oi * 4;
       ipix = findpixel(img, lat, lon);
       if (ipix) {
         memcpy(opix, ipix, 4);
       }
-      if (imgproj_debug) { putchar('\n'); }
+      if (imgproj_debug) {
+        putc('\n', stderr);
+	fflush(stderr);
+      }
     }
   }
 
   r = writeimg(op, img, ovector);
+
+  fprintf(stderr, "z=%u %ux%u+%u+%u \"%s\"\n",
+    op->z, owidth, oheight, op->xa, op->ya, op->filename);
 
   return r; 
 quit:

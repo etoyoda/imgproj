@@ -26,7 +26,7 @@ imgspec_parse(struct georefimg *img, const char *spec)
   while (NULL != (token = strtok_r(spec2, ",", &saveptr))) {
     /* spec2, 1st arg to strtok_r() must be NULL after the first call */
     spec2 = NULL;
-    if (imgproj_debug) { printf("token <%s>\n", token); }
+    if (imgproj_debug) { fprintf(stderr, "token <%s>\n", token); }
     switch (SYM2(token[0], token[1])) {
       case SYM2('p', PT_PERSPECTIVE):
       case SYM2('p', PT_STEREOGRAPHIC):
