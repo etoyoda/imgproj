@@ -215,7 +215,10 @@ makeimg(const struct outparams *op, const struct georefimg *img)
       opix = (png_byte *)(ovector[oj]) + oi * 4;
       ipix = findpixel(img, lat, lon);
       if (ipix) {
-        memcpy(opix, ipix, 4);
+        opix[0] = (ipix[0] >> 1) | 0x80;
+	opix[1] = ipix[1];
+	opix[2] = ipix[2];
+	opix[3] = ipix[3];
       }
       if (imgproj_debug) {
         putc('\n', stderr);
@@ -226,8 +229,10 @@ makeimg(const struct outparams *op, const struct georefimg *img)
 
   r = writeimg(op, img, ovector);
 
-  fprintf(stderr, "z=%u %ux%u+%u+%u \"%s\"\n",
-    op->z, owidth, oheight, op->xa, op->ya, op->filename);
+  if (isatty(fileno(stderr))) {
+    fprintf(stderr, "z=%u %ux%u+%u+%u \"%s\"\n",
+      op->z, owidth, oheight, op->xa, op->ya, op->filename);
+  }
 
   return r; 
 quit:

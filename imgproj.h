@@ -35,6 +35,14 @@ struct georefimg {
   struct georefimg	*img_next;
 };
 
+enum outfilter {
+  OF_THRU = 0,
+  OF_REDWHITE,
+  OF_GREENWHITE,
+  OF_BLUEWHITE,
+  OF_UNCHO
+};
+
 struct outparams {
    unsigned z;  /* zoom level */
    unsigned xa;  /* global x index of first pixel (= 256 xfirst) */
@@ -42,6 +50,7 @@ struct outparams {
    unsigned ya;  /* global y index of first pixel (= 256 yfirst) */
    unsigned yz;  /* global y index of last pixel (= 256 ylast + 255) */
    const char *filename;
+   enum outfilter of;
 };
 
 extern int imgproj_debug;
