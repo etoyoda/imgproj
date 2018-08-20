@@ -56,8 +56,11 @@ loadimg(struct georefimg *img, const char *fnam)
   img->img_height = png_get_image_height(png, info);
   ucoltype = png_get_color_type(png, info);
   udepth = png_get_bit_depth(png, info);
-  fprintf(stderr, "%s: width=%zu height=%zu type=%u depth=%u\n",
-    fnam, (size_t)img->img_width, (size_t)img->img_height, ucoltype, udepth);
+  if (isatty(fileno(stderr))) {
+    fprintf(stderr, "%s: width=%zu height=%zu type=%u depth=%u\n",
+      fnam, (size_t)img->img_width, (size_t)img->img_height, ucoltype, udepth);
+  }
+
 
   /* configuration to read (and convert to) RGBA image */
   if (udepth == 16) {
