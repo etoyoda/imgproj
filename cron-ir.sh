@@ -26,4 +26,5 @@ mkdir -p gmsir.$ymdhn/4/{10,11,12,13,14,15,0,1,2}
 zip gmsir.$ymdhn.zip gmsir.$ymdhn
 mv gmsir.$ymdhn.zip ../../wisdata/arch/files
 
+rm -f gmsir
 ln -s -f gmsir.$ymdhn gmsir
