@@ -21,7 +21,7 @@ wget -q -Ogmsir.${ymdhn}/gmsir.png \
   http://www.jma.go.jp/jp/gms/imgs/6/infrared/1/${ymdhn}-00.png
 
 mkdir -p gmsir.$ymdhn/4/{10,11,12,13,14,15,0,1,2}
-./imgproj -pp,lc140.7,sw494.9,sh491.9,cw511.5,ch512.0 gmsir.${ymdhn}/gmsir.png \
+./imgproj -pp,lc140.7,sw494.9,sh491.9,cw511.5,ch512.0,oc gmsir.${ymdhn}/gmsir.png \
   gmsir.$ymdhn/4/{10,11,12,13,14,15,0,1,2}/{4,5,6,7,8,9}.png
 zip -qqr gmsir.$ymdhn.zip gmsir.$ymdhn
 mv gmsir.$ymdhn.zip ../../wisdata/arch/files

@@ -9,6 +9,15 @@ enum projtype {
   PT_RECTANGULAR = 'r'
 };
 
+enum outfilter {
+  OF_THRU = 0,
+  OF_REDWHITE = 'r',
+  OF_GREENWHITE = 'g',
+  OF_BLUEWHITE = 'b',
+  OF_CYANYELLOW = 'c',
+  OF_UNCHO = 'u'
+};
+
 struct georefimg {
   /* --- members to hold image --- */
   int   		img_width;
@@ -33,24 +42,16 @@ struct georefimg {
   double		img_sh;
   /* --- pointer to chain to the next image --- */
   struct georefimg	*img_next;
-};
-
-enum outfilter {
-  OF_THRU = 0,
-  OF_REDWHITE,
-  OF_GREENWHITE,
-  OF_BLUEWHITE,
-  OF_UNCHO
+  enum outfilter	img_of;
 };
 
 struct outparams {
-   unsigned z;  /* zoom level */
-   unsigned xa;  /* global x index of first pixel (= 256 xfirst) */
-   unsigned xz;  /* global x index of last pixel (= 256 xlast + 255) */
-   unsigned ya;  /* global y index of first pixel (= 256 yfirst) */
-   unsigned yz;  /* global y index of last pixel (= 256 ylast + 255) */
-   const char *filename;
-   enum outfilter of;
+  unsigned z;  /* zoom level */
+  unsigned xa;  /* global x index of first pixel (= 256 xfirst) */
+  unsigned xz;  /* global x index of last pixel (= 256 xlast + 255) */
+  unsigned ya;  /* global y index of first pixel (= 256 yfirst) */
+  unsigned yz;  /* global y index of last pixel (= 256 ylast + 255) */
+  const char *filename;
 };
 
 extern int imgproj_debug;

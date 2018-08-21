@@ -23,6 +23,7 @@ new_georefimg(void)
   r->img_width = r->img_height = 0;
   r->img_vector = NULL;
   r->img_next = NULL;
+  r->img_of = OF_THRU;
   return r;
 }
 
@@ -211,6 +212,7 @@ makeimg(const struct outparams *op, const struct georefimg *img)
       double lon = 2 * M_PI * (ldexp((int)i + 0.5, -8 - (int)op->z) - 0.5);
       unsigned oi = i - op->xa;
       unsigned oj = j - op->ya;
+      unsigned gray;
       if (imgproj_debug) {
         fprintf(stderr, "# %3u,%3u [%3u,%3u] %+08.3f%+07.3f/",
 	  oi, oj, i, j, DEG(lon), DEG(lat));
@@ -218,10 +220,38 @@ makeimg(const struct outparams *op, const struct georefimg *img)
       opix = (png_byte *)(ovector[oj]) + oi * 4;
       ipix = findpixel(img, lat, lon);
       if (ipix) {
-        opix[0] = (ipix[0] >> 1) | 0x80;
-	opix[1] = ipix[1];
-	opix[2] = ipix[2];
-	opix[3] = ipix[3];
+        switch (img->img_of) {
+	default:
+	  memcpy(opix, ipix, 4);
+	  break;
+	case OF_REDWHITE:
+	  opix[0] = (ipix[0] >> 1) | 0x80u;
+	  opix[1] = ipix[1];  opix[2] = ipix[2];  opix[3] = ipix[3];
+	  break;
+	case OF_GREENWHITE:
+	  opix[0] = ipix[0];  opix[1] = (ipix[1] >> 1) | 0x80u;
+	  opix[2] = ipix[2];  opix[3] = ipix[3];
+	  break;
+	case OF_BLUEWHITE:
+	  opix[0] = ipix[0];  opix[1] = ipix[1]; 
+	  opix[2] = (ipix[2] >> 1) | 0x80u;  opix[3] = ipix[3];
+	  break;
+	case OF_CYANYELLOW:
+	  gray = (ipix[0] + ipix[1] + ipix[2]) / 3;
+	  if (gray < 0x80u) {
+	    opix[0] = gray << 1;
+	    opix[1] = opix[2] = 0xFF;
+	  } else if (gray < 0xE0u) {
+	    opix[0] = opix[1] = 0xFFu;
+	    opix[2] = 0xFFu - (((gray - 0x80u) << 1) + ((gray - 0x80u) >> 1));
+	  } else {
+	    opix[0] = 0xFFu - ((gray - 0xE0u) << 1);
+	    opix[1] = 0xFFu - ((gray - 0xE0u) << 2);
+	    opix[2] = 0u;
+	  }
+	  opix[3] = ipix[3];
+	  break;
+	}
       }
       if (imgproj_debug) {
         putc('\n', stderr);

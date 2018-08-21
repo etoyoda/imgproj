@@ -42,6 +42,13 @@ imgspec_parse(struct georefimg *img, const char *spec)
       case SYM2('c','w'):  img->img_cw = atof(token+2);  break;
       case SYM2('s','h'):  img->img_sh = atof(token+2);  break;
       case SYM2('s','w'):  img->img_sw = atof(token+2);  break;
+      case SYM2('o', OF_REDWHITE):
+      case SYM2('o', OF_GREENWHITE):
+      case SYM2('o', OF_BLUEWHITE):
+      case SYM2('o', OF_CYANYELLOW):
+      case SYM2('o', OF_UNCHO):
+        img->img_of = token[1];
+	break;
       default:
         fprintf(stderr, "unknown parameter (%s)\n", token);
 	r = errno = EINVAL;
