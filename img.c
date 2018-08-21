@@ -119,11 +119,14 @@ findpixel(const struct georefimg *img, double lat, double lon)
   double coslat = cos(lat);
   double lam = lon - RADIAN(img->img_lc);
   if (lam < -M_PI) { lam += 2 * M_PI; }
-  if (lam > RADIAN(80.0)) { goto next; }
-  if (lam < RADIAN(-80.0)) { goto next; }
+  const double deg77 = RADIAN(77.0);
+  if (lam > deg77) { goto next; }
+  if (lam < -deg77) { goto next; }
   double x = nn * coslat * cos(lam);
   double y = nn * coslat * sin(lam);
   double z = EARTH_B_A * EARTH_B_A * nn * sinlat;
+  const double sin77deg = 0.97;
+  if (hypot(z, y) > sin77deg * nn) { goto next; }
   double scale = GEO_R / (GEO_R - x * EARTH_A); 
   double i = img->img_cw + y * img->img_sw * scale;
   double j = img->img_ch - z * img->img_sh * scale;
