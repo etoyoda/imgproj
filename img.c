@@ -241,18 +241,16 @@ makeimg(const struct outparams *op, const struct georefimg *img)
 	  break;
 	case OF_CYANYELLOW:
 	  gray = (ipix[0] + ipix[1] + ipix[2]) / 3;
-	  if (gray < 0x80u) {
-	    opix[0] = gray << 1;
-	    opix[1] = opix[2] = 0xFF;
-	  } else if (gray < 0xE0u) {
-	    opix[0] = opix[1] = 0xFFu;
-	    opix[2] = 0xFFu - (((gray - 0x80u) << 1) + ((gray - 0x80u) >> 1));
-	  } else {
-	    opix[0] = 0xFFu - ((gray - 0xE0u) << 1);
-	    opix[1] = 0xFFu - ((gray - 0xE0u) << 2);
-	    opix[2] = 0u;
+	  if (gray < 0x80u) { /* #00004000 .. #FEFEC0FE */
+	    opix[0] = opix[1] = gray << 1;
+	    opix[2] = 0x40u + gray;
+	    opix[3] = (gray < 0x40u) ? gray << 2 : 0xFFu;
+	  } else { /* #FFFFC0FF .. #C08040FF */
+	    opix[0] = 0xFFu - ((gray - 0x80u) >> 1);
+	    opix[1] = 0xFFu - ((gray - 0x80u) >> 1) - ((gray - 0x80u) >> 2); 
+	    opix[2] = 0xC0u - (gray - 0x80u);
+	    opix[3] = 0xFFu;
 	  }
-	  opix[3] = ipix[3];
 	  break;
 	}
       }
