@@ -24,7 +24,7 @@ else
   wget -q -Ogmsir.${ymdhn}/gmsir.png \
     http://www.jma.go.jp/jp/gms/imgs/6/infrared/1/${ymdhn}-00.png
   mkdir -p gmsir.$ymdhn/4/{10,11,12,13,14,15,0,1,2}
-  ./imgproj -pp,lc140.7,sw494.9,sh491.9,cw511.5,ch512.0,oc gmsir.${ymdhn}/gmsir.png \
+  ./imgproj -pp,lc140.7,sw494.7,sh491.9,cw511.5,ch511.6,oc gmsir.${ymdhn}/gmsir.png \
     gmsir.$ymdhn/4/{11,12,13,14,15,0,1,2}/{4,5,6,7,8,9}.png \
     gmsir.$ymdhn/4/10/{7,8}.png \
     gmsir.$ymdhn/4/{14,15}/10.png
@@ -42,7 +42,7 @@ else
   wget -q -Ogmswv.${ymdhn}/gmswv.png \
     http://www.jma.go.jp/jp/gms/imgs/6/watervapor/1/${ymdhn}-00.png
   mkdir -p gmswv.$ymdhn/4/{11,12,13,14,15,0,1,2}
-  ./imgproj -pp,lc140.7,sw494.9,sh491.9,cw511.5,ch512.0,ob gmswv.${ymdhn}/gmswv.png \
+  ./imgproj -pp,lc140.7,sw494.7,sh491.9,cw511.5,ch511.6,ob gmswv.${ymdhn}/gmswv.png \
     gmswv.$ymdhn/4/{11,12,13,14,15,0,1,2}/{4,5,6,7,8,9}.png \
     gmswv.$ymdhn/4/{14,15}/10.png
   zip -qqr gmswv.$ymdhn.zip gmswv.$ymdhn
@@ -59,7 +59,7 @@ else
   wget -q -Ogmsvs.${ymdhn}/gmsvs.png \
     http://www.jma.go.jp/jp/gms/imgs_c/6/visible/1/${ymdhn}-00.png
   mkdir -p gmsvs.$ymdhn/4/{11,12,13,14,15,0,1}
-  ./imgproj -pp,lc140.7,sw494.9,sh491.9,cw511.5,ch512.0 gmsvs.${ymdhn}/gmsvs.png \
+  ./imgproj -pp,lc140.7,sw494.7,sh491.9,cw511.5,ch511.6 gmsvs.${ymdhn}/gmsvs.png \
     gmsvs.$ymdhn/4/{11,12,13,14,15,0,1}/{4,5,6,7,8,9}.png \
     gmsvs.$ymdhn/4/{14,15}/10.png
   zip -qqr gmsvs.$ymdhn.zip gmsvs.$ymdhn
