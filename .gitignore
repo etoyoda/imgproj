@@ -1,8 +1,14 @@
 *.o
+gmsir*
+gmswv*
+gmsvs*
 imgproj
 201808031310-00.png
 201808031310-00.url
 libpng_test.c
 make_png.c
+tiles.json
+test*
 niw.url
 tags
+z*
