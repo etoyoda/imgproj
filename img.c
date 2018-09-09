@@ -112,7 +112,29 @@ loadimg(struct georefimg *img, const char *fnam)
 }
 
   png_byte *
-findpixel(const struct georefimg *img, double lat, double lon)
+findpixel(const struct georefimg *img, double lat, double lon);
+
+  png_byte *
+findpixel_r(const struct georefimg *img, double lat, double lon)
+{
+  double jr = (lat - img->img_ba) / (img->img_bz - img->img_ba) * img->img_height;
+  double ir = (lon - img->img_la) / (img->img_lz - img->img_la) * img->img_width;
+  if (jr <= -0.5) return NULL;
+  if (jr > img->img_height - 0.5) return NULL;
+  if (ir <= -0.5) return NULL;
+  if (ir > img->img_width - 0.5) return NULL;
+  int i = floor(ir + 0.5);
+  int j = floor(jr + 0.5);
+  if (imgproj_debug) {
+    png_byte *pix = (png_byte *)(img->img_vector[j]) + i * 4;
+    fprintf(stderr, " <%3d,%3d> #%02x%02x%02x%02x",
+      i, j, pix[0], pix[1], pix[2], pix[3]);
+  }
+  return (png_byte *)(img->img_vector[j]) + i * 4;
+}
+
+  png_byte *
+findpixel_p(const struct georefimg *img, double lat, double lon)
 {
   double sinlat = sin(lat);
   /* normal from ellipsoid to axis of the Earth */
@@ -121,21 +143,21 @@ findpixel(const struct georefimg *img, double lat, double lon)
   double lam = lon - RADIAN(img->img_lc);
   if (lam < -M_PI) { lam += 2 * M_PI; }
   const double deg77 = RADIAN(77.0);
-  if (lam > deg77) { goto next; }
-  if (lam < -deg77) { goto next; }
+  if (lam > deg77) { return NULL; }
+  if (lam < -deg77) { return NULL; }
   double x = nn * coslat * cos(lam);
   double y = nn * coslat * sin(lam);
   double z = EARTH_B_A * EARTH_B_A * nn * sinlat;
   const double sin77deg = 0.97;
-  if (hypot(z, y) > sin77deg * nn) { goto next; }
+  if (hypot(z, y) > sin77deg * nn) { return NULL; }
   double scale = GEO_R / (GEO_R - x * EARTH_A); 
   double i = img->img_cw + y * img->img_sw * scale;
   double j = img->img_ch - z * img->img_sh * scale;
   unsigned ui, uj;
-  if (i < 0.0) { goto next; }
-  if (i > (img->img_width - 1)) { goto next; }
-  if (j < 0.0) { goto next; }
-  if (j > (img->img_height - 1)) { goto next; }
+  if (i < 0.0) { return NULL; }
+  if (i > (img->img_width - 1)) { return NULL; }
+  if (j < 0.0) { return NULL; }
+  if (j > (img->img_height - 1)) { return NULL; }
   ui = floor(i + 0.5);
   uj = floor(j + 0.5);
   if (imgproj_debug) {
@@ -144,8 +166,24 @@ findpixel(const struct georefimg *img, double lat, double lon)
       ui, uj, pix[0], pix[1], pix[2], pix[3]);
   }
   return (png_byte *)(img->img_vector[uj]) + ui * 4;
+}
 
-next:
+  png_byte *
+findpixel(const struct georefimg *img, double lat, double lon)
+{
+  png_byte *r;
+  switch (img->img_projtype) {
+  case PT_PERSPECTIVE:
+    r = findpixel_p(img, lat, lon);
+    break;
+  case PT_RECTANGULAR:
+    r = findpixel_r(img, lat, lon);
+    break;
+  default:
+    errno = EINVAL;
+    return NULL;
+  }
+  if (r) return r;
   if (img->img_next) {
     return findpixel(img, lat, lon);
   } else {
