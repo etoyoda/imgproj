@@ -212,7 +212,6 @@ nomatch:
 /* usage:
  * $ imgproj -p[options],input.png [-param ...] z/x/y.png ...
  *
- --- obsolete info
  * -pp,lc140.7,cw511,ch512,sh494.9,sw491.9
  *   the input.png is full disc image from a geostationary satellite
  *   located at 140.7 degree east, with the center of field of view at

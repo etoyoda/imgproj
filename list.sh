@@ -18,6 +18,8 @@ do
     gmsir*)  nm=Himawari-IR ;;
     gmswv*)  nm=Himawari-WV ;;
     gmsvs*)  nm=Himawari-VS ;;
+    gskwx*)  nm=SuikeiWx ;;
+    gskte*)  nm=SuikeiT ;;
     esac
     echo "\"${dir}\": {\"vn\":\"${nm}/${dhn}\", \"url\":\"${url}\"}," >> z.tmp
   else

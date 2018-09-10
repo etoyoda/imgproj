@@ -35,6 +35,12 @@ fi
 
 if test X$h != X09 -a X$h != X21 ; then
   : nothing
+else
+  bash -$- cron-sk.sh
+fi
+
+if test X$h != X09 -a X$h != X21 ; then
+  : nothing
 elif test -d gmswv.$ymdhn ; then
   echo gmswv.$ymdhn already present
 else
@@ -69,5 +75,3 @@ fi
 
 bash -$- list.sh
 
-rm -f gmsir
-ln -s -f gmsir.$ymdhn gmsir

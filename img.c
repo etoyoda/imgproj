@@ -117,20 +117,20 @@ findpixel(const struct georefimg *img, double lat, double lon);
   png_byte *
 findpixel_r(const struct georefimg *img, double lat, double lon)
 {
-  double jr = (lat - img->img_ba) / (img->img_bz - img->img_ba) * img->img_height;
-  double ir = (lon - img->img_la) / (img->img_lz - img->img_la) * img->img_width;
+  double jr = (DEG(lat) - img->img_ba) / (img->img_bz - img->img_ba) * img->img_height;
+  double ir = (DEG(lon) - img->img_la) / (img->img_lz - img->img_la) * img->img_width;
   if (jr <= -0.5) return NULL;
   if (jr > img->img_height - 0.5) return NULL;
   if (ir <= -0.5) return NULL;
   if (ir > img->img_width - 0.5) return NULL;
   int i = floor(ir + 0.5);
   int j = floor(jr + 0.5);
+  png_byte *pix = (png_byte *)(img->img_vector[j]) + i * 4;
   if (imgproj_debug) {
-    png_byte *pix = (png_byte *)(img->img_vector[j]) + i * 4;
     fprintf(stderr, " <%3d,%3d> #%02x%02x%02x%02x",
       i, j, pix[0], pix[1], pix[2], pix[3]);
   }
-  return (png_byte *)(img->img_vector[j]) + i * 4;
+  return pix;
 }
 
   png_byte *
