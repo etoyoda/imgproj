@@ -154,6 +154,9 @@ findpixel_p(const struct georefimg *img, double lat, double lon)
   double i = img->img_cw + y * img->img_sw * scale;
   double j = img->img_ch - z * img->img_sh * scale;
   unsigned ui, uj;
+  if (imgproj_debug) {
+    fprintf(stderr, " i=%g j=%g", i, j);
+  }
   if (i < 0.0) { return NULL; }
   if (i > (img->img_width - 1)) { return NULL; }
   if (j < 0.0) { return NULL; }
@@ -291,6 +294,12 @@ makeimg(const struct outparams *op, const struct georefimg *img)
 	    opix[3] = 0xFFu;
 	  }
 	  break;
+        case OF_BUNPU:
+	  memcpy(opix, ipix, 4);
+          if ((ipix[0] == 0xC8u) && (ipix[1] == 0xC8u) && (ipix[2] == 0xC8u)) {
+            opix[3] = 0;
+          }
+          break;
 	}
       }
       if (imgproj_debug) {

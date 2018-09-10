@@ -15,7 +15,7 @@ enum outfilter {
   OF_GREENWHITE = 'g',
   OF_BLUEWHITE = 'b',
   OF_CYANYELLOW = 'c',
-  OF_UNCHO = 'u'
+  OF_BUNPU = 'u'
 };
 
 struct georefimg {

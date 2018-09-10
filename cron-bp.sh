@@ -43,9 +43,9 @@ do
       wget -q -O${gbffx}.${ymdhn}/${item}_000_${ymdhn}-${f}.png \
         http://www.jma.go.jp/jp/mesh20/imgs/${item}/000/${ymdhn}-${f}.png
       mkdir -p ${gbffx}.$ymdhn/4/{13,14}
-      ./imgproj -pr,la118.7252,lz150.4015,ba47.2639,bz21.3982 \
+      ./imgproj -pr,ou,la118.7252,lz150.4015,ba47.2639,bz21.3982 \
         ${gbffx}.${ymdhn}/${item}_000_${ymdhn}-${f}.png \
-        ${gbffx}.$ymdhn/4/{13/6,14/5,14/6}.png
+        ${gbffx}.$ymdhn/4/{13,14}/{5,6,7}.png
       if test -d ${PUBDATA} ; then
         zip -qqr ${gbffx}.$ymdhn.zip ${gbffx}.$ymdhn
         test -d ${PUBDATA}/files/$ym || mkdir ${PUBDATA}/files/$ym

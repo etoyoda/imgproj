@@ -46,7 +46,7 @@ imgspec_parse(struct georefimg *img, const char *spec)
       case SYM2('o', OF_GREENWHITE):
       case SYM2('o', OF_BLUEWHITE):
       case SYM2('o', OF_CYANYELLOW):
-      case SYM2('o', OF_UNCHO):
+      case SYM2('o', OF_BUNPU):
         img->img_of = token[1];
 	break;
       default:
