@@ -20,6 +20,7 @@ do
     gmsvs*)  nm=Himawari-VS ;;
     gskwx*)  nm=SuikeiWx ;;
     gskte*)  nm=SuikeiT ;;
+    gb*) nm=Bunpu$(echo $dir | cut -b3-5 ) ;;
     esac
     echo "\"${dir}\": {\"vn\":\"${nm}/${dhn}\", \"url\":\"${url}\"}," >> z.tmp
   else
