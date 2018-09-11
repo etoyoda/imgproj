@@ -111,20 +111,27 @@ loadimg(struct georefimg *img, const char *fnam)
   return 0;
 }
 
-  png_byte *
-findpixel(const struct georefimg *img, double lat, double lon);
+struct pixprop {
+  unsigned pp_i;
+  unsigned pp_j;
+};
 
   png_byte *
-findpixel_r(const struct georefimg *img, double lat, double lon)
+findpixel(const struct georefimg *img, double lat, double lon, struct pixprop *pp);
+
+  png_byte *
+findpixel_r(const struct georefimg *img, double lat, double lon, struct pixprop *pp)
 {
   double jr = (DEG(lat) - img->img_ba) / (img->img_bz - img->img_ba) * img->img_height;
   double ir = (DEG(lon) - img->img_la) / (img->img_lz - img->img_la) * img->img_width;
-  if (jr <= -0.5) return NULL;
-  if (jr > img->img_height - 0.5) return NULL;
-  if (ir <= -0.5) return NULL;
-  if (ir > img->img_width - 0.5) return NULL;
   int i = floor(ir + 0.5);
   int j = floor(jr + 0.5);
+  if (i < 0) return NULL;
+  if (j < 0) return NULL;
+  if (i >= img->img_width) return NULL;
+  if (j >= img->img_height) return NULL;
+  pp->pp_i = i;
+  pp->pp_j = j;
   png_byte *pix = (png_byte *)(img->img_vector[j]) + i * 4;
   if (imgproj_debug) {
     fprintf(stderr, " <%3d,%3d> #%02x%02x%02x%02x",
@@ -134,7 +141,7 @@ findpixel_r(const struct georefimg *img, double lat, double lon)
 }
 
   png_byte *
-findpixel_p(const struct georefimg *img, double lat, double lon)
+findpixel_p(const struct georefimg *img, double lat, double lon, struct pixprop *pp)
 {
   double sinlat = sin(lat);
   /* normal from ellipsoid to axis of the Earth */
@@ -151,36 +158,38 @@ findpixel_p(const struct georefimg *img, double lat, double lon)
   const double sin77deg = 0.97;
   if (hypot(z, y) > sin77deg * nn) { return NULL; }
   double scale = GEO_R / (GEO_R - x * EARTH_A); 
-  double i = img->img_cw + y * img->img_sw * scale;
-  double j = img->img_ch - z * img->img_sh * scale;
-  unsigned ui, uj;
+  double ir = img->img_cw + y * img->img_sw * scale;
+  double jr = img->img_ch - z * img->img_sh * scale;
+  int i, j;
   if (imgproj_debug) {
-    fprintf(stderr, " i=%g j=%g", i, j);
+    fprintf(stderr, " i=%g j=%g", ir, jr);
   }
-  if (i < 0.0) { return NULL; }
-  if (i > (img->img_width - 1)) { return NULL; }
-  if (j < 0.0) { return NULL; }
-  if (j > (img->img_height - 1)) { return NULL; }
-  ui = floor(i + 0.5);
-  uj = floor(j + 0.5);
+  i = floor(ir + 0.5);
+  j = floor(jr + 0.5);
+  if (i < 0) return NULL;
+  if (j < 0) return NULL;
+  if (i >= img->img_width) return NULL;
+  if (j >= img->img_height) return NULL;
+  pp->pp_i = i;
+  pp->pp_j = j;
   if (imgproj_debug) {
-    png_byte *pix = (png_byte *)(img->img_vector[uj]) + ui * 4;
+    png_byte *pix = (png_byte *)(img->img_vector[j]) + i * 4;
     fprintf(stderr, " <%3u,%3u> #%02x%02x%02x%02x",
-      ui, uj, pix[0], pix[1], pix[2], pix[3]);
+      i, j, pix[0], pix[1], pix[2], pix[3]);
   }
-  return (png_byte *)(img->img_vector[uj]) + ui * 4;
+  return (png_byte *)(img->img_vector[j]) + i * 4;
 }
 
   png_byte *
-findpixel(const struct georefimg *img, double lat, double lon)
+findpixel(const struct georefimg *img, double lat, double lon, struct pixprop *pp)
 {
   png_byte *r;
   switch (img->img_projtype) {
   case PT_PERSPECTIVE:
-    r = findpixel_p(img, lat, lon);
+    r = findpixel_p(img, lat, lon, pp);
     break;
   case PT_RECTANGULAR:
-    r = findpixel_r(img, lat, lon);
+    r = findpixel_r(img, lat, lon, pp);
     break;
   default:
     errno = EINVAL;
@@ -188,7 +197,7 @@ findpixel(const struct georefimg *img, double lat, double lon)
   }
   if (r) return r;
   if (img->img_next) {
-    return findpixel(img, lat, lon);
+    return findpixel(img, lat, lon, pp);
   } else {
     return NULL;
   }
@@ -220,6 +229,16 @@ writeimg(const struct outparams *op, const struct georefimg *img,
   fclose(fp);
   
   return 0;
+}
+
+  unsigned long
+rgbint(const png_byte *pix)
+{
+  return
+    ((unsigned char)pix[0] << 16) |
+    ((unsigned char)pix[1] << 8) |
+     (unsigned char)pix[2]
+    ;
 }
 
   int
@@ -258,12 +277,13 @@ makeimg(const struct outparams *op, const struct georefimg *img)
       unsigned oi = i - op->xa;
       unsigned oj = j - op->ya;
       unsigned gray;
+      struct pixprop pp;
       if (imgproj_debug) {
         fprintf(stderr, "# %3u,%3u [%3u,%3u] %+08.3f%+07.3f/",
 	  oi, oj, i, j, DEG(lon), DEG(lat));
       }
       opix = (png_byte *)(ovector[oj]) + oi * 4;
-      ipix = findpixel(img, lat, lon);
+      ipix = findpixel(img, lat, lon, &pp);
       if (ipix) {
         switch (img->img_of) {
 	default:
@@ -295,10 +315,16 @@ makeimg(const struct outparams *op, const struct georefimg *img)
 	  }
 	  break;
         case OF_BUNPU:
-	  memcpy(opix, ipix, 4);
-          if ((ipix[0] == 0xC8u) && (ipix[1] == 0xC8u) && (ipix[2] == 0xC8u)) {
-            opix[3] = 0;
-          }
+	  if ((rgbint(ipix) == 0xC8C8C8uL)
+	  || (
+	    (rgbint(ipix) == 0xFFFFFFuL) &&
+	    (pp.pp_i > 0) && (rgbint(ipix - 4) == 0xC8C8C8uL)
+	  )) {
+	    opix[0] = opix[1] = opix[2] = 0xC8u;
+            opix[3] = 0u;
+	  } else {
+	    memcpy(opix, ipix, 4);
+	  }
           break;
 	}
       }
