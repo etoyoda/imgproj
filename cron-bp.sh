@@ -14,12 +14,12 @@ m=$2
 d=$3
 h=$4
 case "$h" in
-18|19|20|21|22|23)
-  h=18
-  ;;
-0[6-9]|1[0-7])
-  h=06
-  ;;
+17|18|19|20|21|22|23)
+  h=18 ;;
+11|12|13|14|15|16)
+  h=12 ;;
+05|06|07|08|09|10)
+  h=06 ;;
 *)
   set $(TZ=UTC date '+%Y %m %d')
   y=$1
@@ -36,8 +36,10 @@ do
   case "$item.$h" in
   temp.06) ff='03 08' ;;  # 15JST, 1d+06JST
   cond.06) ff='01 05 07' ;;  # 00Z, 12Z, 18Z
+  temp.12) ff='01 06 08' ;;  # 15JST, 1d+06JST, 1d+12JST
+  cond.12) ff='03 07' ;;  # 12Z, 1d+00Z
   temp.18) ff='04 07' ;;  # 1d+06JST, 1d+15JST
-  cond.18) ff='01 05 08' ;;  # 
+  cond.18) ff='01 05 08' ;;  # 12Z, 1d+00Z, 1d+09Z
   esac
   for f in $ff
   do
@@ -47,7 +49,7 @@ do
     temp) gbffx=gb${f}t ;;
     esac
     if test -d ${gbffx}.$ymdhn ; then
-      echo ${gbffx}.$ymdhn already present
+      test ! -t 2 || echo ${gbffx}.$ymdhn already present >&2
     else
       mkdir -p ${gbffx}.$ymdhn
       ruby -e 'y,m,d,h,f = ARGV.map{|s|s.to_i(10)};
@@ -71,3 +73,5 @@ do
 
   done
 done
+
+bash -$- list.sh

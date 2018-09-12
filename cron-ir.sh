@@ -33,14 +33,6 @@ else
   mv gmsir.$ymdhn.zip ${PUBDATA}/files/$ym
 fi
 
-if test X$h = X09 -o X$h = X21 ; then
-  bash -$- cron-sk.sh
-fi
-
-if test X$h = X06 -o X$h != X18 ; then
-  bash -$- cron-bp.sh
-fi
-
 if test X$h != X09 -a X$h != X21 ; then
   : nothing
 elif test -d gmswv.$ymdhn ; then

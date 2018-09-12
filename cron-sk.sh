@@ -43,3 +43,4 @@ do
 
 done
 
+bash -$- list.sh
