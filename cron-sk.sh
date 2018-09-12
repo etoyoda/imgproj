@@ -36,7 +36,8 @@ do
       ${gskxx}.$ymdhn/4/{13/6,14/5,14/6}.png
     if test -d ${PUBDATA} ; then
       zip -qqr ${gskxx}.$ymdhn.zip ${gskxx}.$ymdhn
-      test -d ${PUBDATA}/files/$ym || mkdir ${PUBDATA}/files/$ym
+      chmod g+w ${gskxx}.$ymdhn
+      test -d ${PUBDATA}/files/$ym || mkdir -m 0775 ${PUBDATA}/files/$ym
       mv ${gskxx}.$ymdhn.zip ${PUBDATA}/files/$ym
     fi
   fi

@@ -29,7 +29,8 @@ else
     gmsir.$ymdhn/4/10/{7,8}.png \
     gmsir.$ymdhn/4/{14,15}/10.png
   zip -qqr gmsir.$ymdhn.zip gmsir.$ymdhn
-  test -d ${PUBDATA}/files/$ym || mkdir ${PUBDATA}/files/$ym
+  chmod g+w gmsir.$ymdhn.zip
+  test -d ${PUBDATA}/files/$ym || mkdir -m 0775 ${PUBDATA}/files/$ym
   mv gmsir.$ymdhn.zip ${PUBDATA}/files/$ym
 fi
 
@@ -46,7 +47,8 @@ else
     gmswv.$ymdhn/4/{11,12,13,14,15,0,1,2}/{4,5,6,7,8,9}.png \
     gmswv.$ymdhn/4/{14,15}/10.png
   zip -qqr gmswv.$ymdhn.zip gmswv.$ymdhn
-  test -d ${PUBDATA}/files/$ym || mkdir ${PUBDATA}/files/$ym
+  chmod g+w gmswv.$ymdhn.zip
+  test -d ${PUBDATA}/files/$ym || mkdir -m 0775 ${PUBDATA}/files/$ym
   mv gmswv.$ymdhn.zip ${PUBDATA}/files/$ym
 fi
 
@@ -63,7 +65,8 @@ else
     gmsvs.$ymdhn/4/{11,12,13,14,15,0,1}/{4,5,6,7,8,9}.png \
     gmsvs.$ymdhn/4/{14,15}/10.png
   zip -qqr gmsvs.$ymdhn.zip gmsvs.$ymdhn
-  test -d ${PUBDATA}/files/$ym || mkdir ${PUBDATA}/files/$ym
+  chmod g+w gmsvs.$ymdhn.zip
+  test -d ${PUBDATA}/files/$ym || mkdir -m 0775 ${PUBDATA}/files/$ym
   mv gmsvs.$ymdhn.zip ${PUBDATA}/files/$ym
 fi
 
