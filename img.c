@@ -217,6 +217,16 @@ writeimg(const struct outparams *op, const struct georefimg *img,
 
   if (setjmp(png_jmpbuf(png))) { errno = EPNGFATAL; return EOF; }
 
+  {
+    const int NTEXT = 1;
+    png_text txtbuf[NTEXT];
+    txtbuf[0].compression = PNG_TEXT_COMPRESSION_NONE;
+    txtbuf[0].key = "Software";
+    txtbuf[0].text = "https://github.com/etoyoda/imgproj";
+    txtbuf[0].text_length = strlen(txtbuf[0].text);
+    png_set_text(png, info, txtbuf, NTEXT);
+  }
+
   png_init_io(png, fp);
 
   unsigned owidth = op->xz - op->xa + 1; 
