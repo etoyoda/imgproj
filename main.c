@@ -106,6 +106,7 @@ struct re_outspec {
   /* filename with colon-separated parameters */
   regex_t       colon;
   regex_t       colon2;
+  regex_t       colon3;
 };
 
   struct re_outspec *
@@ -127,6 +128,11 @@ outspec_regcomp(void)
   /* --- pattern 2: general filename w/pattern --- */
   r = regcomp(&regs.colon2,
     ":z([0-9]+)[:,]?x([0-9]+)[:,]?y([0-9]+):(.*\\.png)$",
+    REG_EXTENDED | REG_NEWLINE);
+  if (r) { goto err; }
+  /* --- pattern 3: general filename w/pattern --- */
+  r = regcomp(&regs.colon3,
+    ":z([0-9]+)[:,]?x([0-9]+)=([0-9]+)[:,]?y([0-9]+)=([0-9]+):(.*\\.png)$",
     REG_EXTENDED | REG_NEWLINE);
   if (r) { goto err; }
   return &regs;
@@ -191,7 +197,7 @@ try_colon:
 try_colon2:
   /* --- pattern 2: explicit parameter --- */
   r = regexec(&regs->colon2, fnam, NMATCH, md, 0);
-  if (r == REG_NOMATCH) { goto nomatch; }
+  if (r == REG_NOMATCH) { goto try_colon3; }
   if (r) { regexmsg(r, &regs->colon); goto regerr; }
   errno = 0;
   op.z = strtoul(fnam + md[1].rm_so, NULL, 10);
@@ -200,6 +206,21 @@ try_colon2:
   op.ya = 256u * strtoul(fnam + md[3].rm_so, NULL, 10);
   op.yz = op.ya + 255u;
   op.filename = fnam + md[4].rm_so;
+  r = makeimg(&op, img);
+  return r;
+
+try_colon3:
+  /* --- pattern 3: explicit parameter in pixel --- */
+  r = regexec(&regs->colon3, fnam, NMATCH, md, 0);
+  if (r == REG_NOMATCH) { goto nomatch; }
+  if (r) { regexmsg(r, &regs->colon); goto regerr; }
+  errno = 0;
+  op.z = strtoul(fnam + md[1].rm_so, NULL, 10);
+  op.xa = strtoul(fnam + md[2].rm_so, NULL, 10);
+  op.xz = strtoul(fnam + md[3].rm_so, NULL, 10);
+  op.ya = strtoul(fnam + md[4].rm_so, NULL, 10);
+  op.yz = strtoul(fnam + md[5].rm_so, NULL, 10);
+  op.filename = fnam + md[6].rm_so;
   r = makeimg(&op, img);
   return r;
 
